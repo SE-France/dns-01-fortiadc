@@ -1,13 +1,8 @@
-# dns-01-fortiadc
-
-[dehydrated](https://github.com/lukas2511/dehydrated) hook for Fortinet FortiADC product.
-Tested on version 5.8.0
-
-
 # FortiADC hook for `dehydrated`
 
 This is a hook for the [Let's Encrypt](https://letsencrypt.org/) ACME client [dehydrated](https://github.com/lukas2511/dehydrated) (previously known as `letsencrypt.sh`) that allows you to use [Fortinet FortiADC](https://cloud.google.com/dns/docs/) records to respond to `dns-01` challenges.
 
+Tested on FortiADC 5.8.0
 
 ## Requirements
 
