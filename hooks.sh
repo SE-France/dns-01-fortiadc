@@ -78,7 +78,7 @@ function search_global_dns_server_zone() {
     local SEARCH=$DOMAIN'.'
     
     for row in $ZONES; do
-        local DOMAIN_NAME=$(echo ${row} | base64 --decode | jq -r '.domain_name')
+        DOMAIN_NAME=$(echo ${row} | base64 --decode | jq -r '.domain_name')
         if [[ $SEARCH == *"$DOMAIN_NAME"* ]] ; then
             MKEY=$(echo ${row} | base64 --decode | jq -r '.mkey')
             
@@ -166,6 +166,35 @@ function del_global_dns_server_zone_child_txt_record() {
     echo '     + something wrong append'
 }
 
+function verif_challenge_live() {
+    echo '   + verify txt resolution '
+    echo -n ''
+    for nameserver in $(dig $DOMAIN_NAME NS +short); do 
+        echo -n '     + with '$nameserver' '
+        CMD="dig _acme-challenge.$DOMAIN TXT @$nameserver +short"
+        nsresult=$($CMD)
+        # nsresult comes with the TXT RR in double quotes - remove those
+        nsresult=${nsresult//$'"'/''}
+        until [[ "$nsresult" = "$TOKEN_VALUE" ]]; do
+            echo -n '.'
+            sleep 1
+            echo -n '.'
+            sleep 1
+            echo -n '.'
+            sleep 1
+            echo -n '.'
+            sleep 1
+            echo -n '.'
+            nsresult=$($CMD)
+            # nsresult comes with the TXT RR in double quotes - remove those
+            # TODO DRY: move to dedicated function
+            nsresult=${nsresult//$'"'/''}
+        done
+        echo -n "good"
+        echo ''
+    done
+}
+
 
 function deploy_challenge() {
     local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
@@ -216,7 +245,7 @@ function deploy_challenge() {
         fi
         
         logout    
-        sleep 2
+        verif_challenge_live
     fi
 }
 
