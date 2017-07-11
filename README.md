@@ -8,7 +8,7 @@ Tested on FortiADC 5.8.0
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install jq
+$ sudo apt-get install jq curl
 ```
 
 ## Installation
