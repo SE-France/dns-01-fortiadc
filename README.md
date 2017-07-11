@@ -23,7 +23,7 @@ $ git clone https://github.com/lenoxys/dns-01-fortiadc hooks/dns-01-fortiadc
 
 ## Configuration
 
-This hook uses the gcloud command-line tool and fascilitates the default project and account information. Check ```gcloud info``` to see, what this is set to. Also, your account needs to have "editor" permissions in the current project. This project needs to host your DNS zone for the domain (or a subdomain) you want to get a Let's Encrypt certificate for. Also, if you use the Google Cloud HTTPS load balancers, these have to be in the same project as well. Only required if you wish this hook to update the created certificates automatically. 
+This hook uses Fortinet FortiADC API. This project needs to host your DNS zone for the domain (or a subdomain) you want to get a Let's Encrypt certificate for. Also, if you use the FortiADC as a HTTPS load balancers, you have to manually add the certificate. 
 
 Also you need to change the following settings in your dehydrated config (original value commented out):
 ```
@@ -32,7 +32,7 @@ Also you need to change the following settings in your dehydrated config (origin
 CHALLENGETYPE="dns-01"
 ``` 
 
-If you use Google Cloud HTTPS load balancers, you need to align your setup of target proxies with how you create the certificates. All domains served by a target proxy have to be in the same certificate. If that is more than one, you cannot use the -d command line option of dehydrated. Instead you have to create a domains.txt file. The following example assumes you have two target proxies; one serving requests for example.com and www.example.com. And the second one serving wwwtest.example.com:
+If you use FortiADC as a HTTPS load balancers, you need to align your setup of target proxies with how you create the certificates. All domains served by a target proxy have to be in the same certificate. If that is more than one, you cannot use the -d command line option of dehydrated. Instead you have to create a domains.txt file. The following example assumes you have two target proxies; one serving requests for example.com and www.example.com. And the second one serving wwwtest.example.com:
 
 domains.txt
 ``` 
