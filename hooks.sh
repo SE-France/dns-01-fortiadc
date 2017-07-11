@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-. ./fortiadc.conf
+. hooks/dns-01-fortiadc/fortiadc.conf
 
 # DO NOT CHANGE PARAMETERS BELOW
 
