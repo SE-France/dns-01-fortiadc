@@ -2,9 +2,9 @@
 
 . ./fortiadc.conf
 
-return
-
 # DO NOT CHANGE PARAMETERS BELOW
+
+TOKEN_LOCK_FILE="token.lock"
 
 CURL="/usr/bin/curl -s -f -m 5 -H 'Accept: application/json'"
 CURL_LOGIN="$CURL -c $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
@@ -12,7 +12,6 @@ CURL_GET="$CURL -b $TOKEN_LOCK_FILE -k -X GET $FORTIADC/api"
 CURL_POST="$CURL -b $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
 CURL_DELETE="$CURL -b $TOKEN_LOCK_FILE -k -X DELETE $FORTIADC/api"
 
-TOKEN_LOCK_FILE="token.lock"
 IS_VDOM=0
 LOGGED=0
 URL_VDOM=''
@@ -21,7 +20,6 @@ function login() {
     echo '   + login'
     local DATA='{"username":"'$USERNAME'","password":"'$PASSWORD'"}'
     local CMD=$CURL_LOGIN'/user/login -d '$DATA' || echo -1'
-    
     if [ -1 == $(eval $CMD) ]; then 
         echo '     + connection error !'
         return
@@ -31,8 +29,11 @@ function login() {
 
 function logout() {
     echo '   + logout'
-    local CMD=$CURL_GET'/user/logout'
-    eval $CMD
+    local CMD=$CURL_GET'/user/logout || echo -1' 
+    if [ -1 == $(eval $CMD) ]; then 
+        echo '     + connection error !'
+        return
+    fi
     rm token.lock
 }
 
@@ -61,18 +62,18 @@ function get_vdom_list() {
 
 
 function global_dns_server_zone() {
-    echo '     + extract global dns server zone records'
+    echo '     + extract zone records'
     local CMD=$CURL_GET'/global_dns_server_zone?'$URL_VDOM
     ZONES=$(eval $CMD | jq -r '.payload[] | { mkey: .mkey, domain_name: .domain_name | select(. != null) } | @base64')
 }
 
 
 function search_global_dns_server_zone() {
-    echo '   + retrieving MKEY record for domain : '$DOMAIN
+    echo '   + retrieving zone record for domain : '$DOMAIN
     
     global_dns_server_zone
     
-    test -z "${ZONES}" && echo '     + something wrong append' && return 1
+    test -z "${ZONES}" && echo '     + no zones found' && return 1
 
     local SEARCH=$DOMAIN'.'
     
@@ -87,13 +88,13 @@ function search_global_dns_server_zone() {
             return
         fi
     done
-    echo '     + no record found '
+    echo '     + no zone found '
 }
 
 function get_global_dns_server_zone_child_txt_record() {
-    echo '     + retrieving TXT records for '$MKEY
-    local CMD=$CURL_GET'/global_dns_server_zone_child_txt_record?'$URL_VDOM'pkey='$MKEY
-    TXT_RECORDS=$(eval $CMD | jq -r '.payload[] | @base64')
+    echo '     + retrieving TXT records for zone '$MKEY
+    local CMD=$CURL_GET'/global_dns_server_zone_child_txt_record?'$URL_VDOM'pkey='$MKEY' || echo -1'
+    TXT_RECORDS=$($CMD | jq -r '.payload[] | @base64')
 }
 
 function get_global_dns_server_zone_child_txt_record_idx() {
@@ -101,7 +102,7 @@ function get_global_dns_server_zone_child_txt_record_idx() {
     
     get_global_dns_server_zone_child_txt_record
     
-    test -z "${TXT_RECORDS}" && echo '     + something wrong append' && return 1
+    test -z "${TXT_RECORDS}" && echo '     + no record found' && return 1
     
     for row in $TXT_RECORDS; do
         local NAME=$(echo ${row} | base64 --decode | jq -r '.name')
@@ -112,47 +113,55 @@ function get_global_dns_server_zone_child_txt_record_idx() {
             return
         fi
     done
-    echo '     + no record found '
 }
 
 function add_global_dns_server_zone_child_txt_record() {
+    
+    get_global_dns_server_zone_child_txt_record_idx $MKEY $CLEAN_DOMAIN
+    test -n "${IDX}" && echo '     + txt entrie already exist : pass !' && return 1
 
     echo '   + add TXT record for '$DOMAIN
     
-    test -z "${IDX}" && echo '     + empty index' && return 1
-    test -z "${MKEY}" && echo '     + empty mkey' && return 1
-    test -z "${CLEAN_DOMAIN}" && echo '     + empty domain' && return 1
+    IDX=$(date +%s)
     
     local DATA='{"mkey":"'$IDX'","name":"'$CLEAN_DOMAIN'","text":"'$TOKEN_VALUE'","ttl":"3600"}'
-    local CMD=$CURL_POST'/global_dns_server_zone_child_txt_record?'$URL_VDOM'pkey='$MKEY' -d '$DATA
+    local CMD=$CURL_POST'/global_dns_server_zone_child_txt_record?'$URL_VDOM'pkey='$MKEY' -d '$DATA' || echo -1'
+    local EVAL=$($CMD)
     
-    echo $CMD
-    
-    if [[ $(eval $CMD | jq -r '.payload') == 0 ]] ; then
-        echo '     + success !'
-    else
-        echo '     + something wrong append (most of the time the txt entrie already exist !)'
+    if [ -1 == $EVAL ]; then 
+        echo '     + connection error !'
+        return
     fi
     
-    return
+    if [[ $(echo $EVAL | jq -r '.payload') == 0 ]] ; then
+        echo '     + success !'
+        return
+    fi
+    
+    echo '     + something wrong append'
 }
 
 function del_global_dns_server_zone_child_txt_record() {
     
+    get_global_dns_server_zone_child_txt_record_idx $MKEY $CLEAN_DOMAIN
+    test -z "${IDX}" && echo '   + no txt record found for this domain' && return 1
+    
     echo '   + delete TXT record for '$DOMAIN
     
-    test -z "${IDX}" && echo '     + no entrie for this txt record' && return 1
-    test -z "${MKEY}" && echo '     + empty mkey' && return 1
+    local CMD=$CURL_DELETE'/global_dns_server_zone_child_txt_record/'$IDX'?'$URL_VDOM'pkey='$MKEY' || echo -1'
+    local EVAL=$($CMD)
     
-    local CMD=$($CURL_DELETE/global_dns_server_zone_child_txt_record/$IDX?pkey=$MKEY)
-    
-    if [[ $(echo $CMD | jq -r '.payload') == 0 ]] ; then
-        echo '     + success !'
-    else
-        echo '     + something wrong append (most of the time the txt entrie does not exist !)'
+    if [ -1 == $EVAL ]; then 
+        echo '     + connection error !'
+        return
     fi
     
-    return
+    if [[ $(echo $EVAL | jq -r '.payload') == 0 ]] ; then
+        echo '     + success !'
+        return
+    fi
+    
+    echo '     + something wrong append'
 }
 
 
@@ -180,8 +189,6 @@ function deploy_challenge() {
     
     test -z "${DOMAIN}" && echo ' + empty domain' && return 1
     test -z "${TOKEN_VALUE}" && echo ' + empty token' && return 1
-    
-    IDX=$(date +%s)
 
     login
     
@@ -193,14 +200,17 @@ function deploy_challenge() {
             for row in $VDOMS; do
                 local VDOM_NAME=$(echo ${row} | base64 --decode | jq -r '.mkey')
                 URL_VDOM='vdom='$VDOM_NAME'&'
-                echo '  + search on vdom "'$VDOM_NAME'"'
+                echo '   +++++++++++++++++++++++++++'
+                echo '   + enter vdom "'$VDOM_NAME'"'
                 search_global_dns_server_zone
-                test -z "${MKEY}" && echo '   + no zone found for this domain on this vdom' && continue
+                test -z "${ZONES}" && echo '   + no zone found for this domain on this vdom' && echo '   + leave vdom "'$VDOM_NAME'"' && continue
                 add_global_dns_server_zone_child_txt_record
+                echo '   + leave vdom "'$VDOM_NAME'"'
             done
         else
             search_global_dns_server_zone
-            add_global_dns_server_zone_child_txt_record
+            test -z "${ZONES}" && echo '   + no zone found for this domain'
+            test "${ZONES}" && add_global_dns_server_zone_child_txt_record
         fi
         
         logout    
@@ -225,11 +235,27 @@ function clean_challenge() {
     login
     if [[ $LOGGED == 1 ]] ; then
         get_vdom_list
-        search_global_dns_server_zone $DOMAIN'.'
-        get_global_dns_server_zone_child_txt_record_idx $MKEY $CLEAN_DOMAIN
-        del_global_dns_server_zone_child_txt_record $MKEY $IDX
-        logout    
-        sleep 2
+        
+        if [[ $IS_VDOM == 1 ]] ; then
+            for row in $VDOMS; do
+                local VDOM_NAME=$(echo ${row} | base64 --decode | jq -r '.mkey')
+                URL_VDOM='vdom='$VDOM_NAME'&'
+                echo '   +++++++++++++++++++++++++++'
+                echo '   + enter vdom "'$VDOM_NAME'"'
+                search_global_dns_server_zone
+                test -z "${ZONES}" && echo '   + no zone found for this domain on this vdom'
+                test -z "${ZONES}" && echo '   + leave vdom "'$VDOM_NAME'"'
+                test -z "${ZONES}" && continue
+                del_global_dns_server_zone_child_txt_record
+                echo '   + leave vdom "'$VDOM_NAME'"'
+            done
+        else
+            search_global_dns_server_zone
+            test -z "${ZONES}" && echo '   + no zone found for this domain'
+            test "${ZONES}" && del_global_dns_server_zone_child_txt_record
+        fi
+        
+        logout
     fi
 }
 
