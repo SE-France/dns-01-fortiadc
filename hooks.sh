@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 
-URL="https://10.0.0.3"
-USERNAME="admin"
-PASSWORD=""
-TOKEN_LOCK_FILE="token.lock"
+. ./fortiadc.conf
+
+return
 
 # DO NOT CHANGE PARAMETERS BELOW
 
 CURL="/usr/bin/curl -s -f -m 5 -H 'Accept: application/json'"
-CURL_LOGIN="$CURL -c $TOKEN_LOCK_FILE -k -X POST $URL/api"
-CURL_GET="$CURL -b $TOKEN_LOCK_FILE -k -X GET $URL/api"
-CURL_POST="$CURL -b $TOKEN_LOCK_FILE -k -X POST $URL/api"
-CURL_DELETE="$CURL -b $TOKEN_LOCK_FILE -k -X DELETE $URL/api"
+CURL_LOGIN="$CURL -c $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
+CURL_GET="$CURL -b $TOKEN_LOCK_FILE -k -X GET $FORTIADC/api"
+CURL_POST="$CURL -b $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
+CURL_DELETE="$CURL -b $TOKEN_LOCK_FILE -k -X DELETE $FORTIADC/api"
 
+TOKEN_LOCK_FILE="token.lock"
 IS_VDOM=0
 LOGGED=0
 URL_VDOM=''

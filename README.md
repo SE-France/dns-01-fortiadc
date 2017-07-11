@@ -8,7 +8,7 @@ Tested on FortiADC® 5.8.0
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install jq curl
+$ sudo apt-get -y openssl curl sed grep mktemp git jq
 ```
 
 ## Installation
@@ -24,6 +24,13 @@ $ git clone https://github.com/lenoxys/dns-01-fortiadc hooks/dns-01-fortiadc
 ## Configuration
 
 This hook uses Fortinet FortiADC® API. This project needs to host your DNS zone for the domain (or a subdomain) you want to get a Let's Encrypt certificate for. Also, if you use the FortiADC® as a HTTPS load balancers, you have to manually add the certificate. 
+
+Also you need to create and edit a config file based on `fortiadc.conf.default`
+
+```
+$ cd hooks/dns-01-fortiadc
+$ cp -a fortiadc.conf.default fortiadc.conf
+```
 
 Also you need to change the following settings in your dehydrated config (original value commented out):
 ```

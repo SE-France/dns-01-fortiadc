@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+FORTIADC="" #IP or FQDN of the FortiADC admin page
+USERNAME="" # username of an admin account
+PASSWORD="" # password of an admin account
