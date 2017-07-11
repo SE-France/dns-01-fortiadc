@@ -25,7 +25,7 @@ $ git clone https://github.com/lenoxys/dns-01-fortiadc hooks/dns-01-fortiadc
 
 This hook uses Fortinet FortiADC® API. This project needs to host your DNS zone for the domain (or a subdomain) you want to get a Let's Encrypt certificate for. Also, if you use the FortiADC® as a HTTPS load balancers, you have to manually add the certificate. 
 
-Also you need to create and edit a config file based on `fortiadc.conf.default`
+You need to create and edit a config file based on `fortiadc.conf.default`
 
 ```
 $ cd hooks/dns-01-fortiadc
