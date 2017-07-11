@@ -81,8 +81,10 @@ function search_global_dns_server_zone() {
         local DOMAIN_NAME=$(echo ${row} | base64 --decode | jq -r '.domain_name')
         if [[ $SEARCH == *"$DOMAIN_NAME"* ]] ; then
             MKEY=$(echo ${row} | base64 --decode | jq -r '.mkey')
-            CLEAN_DOMAIN='_acme-challenge.'$(echo ${SEARCH:0:$(expr ${#SEARCH} - ${#DOMAIN_NAME} - 1)})
-                
+            
+            CLEAN_DOMAIN='_acme-challenge'
+            test $(expr ${#SEARCH} - ${#DOMAIN_NAME} - 1) -ge 0 && CLEAN_DOMAIN=$CLEAN_DOMAIN'.'$(echo ${SEARCH:0:$(expr ${#SEARCH} - ${#DOMAIN_NAME} - 1)})
+            
             echo '     + zone is '$MKEY
             echo '     + txt record is '$CLEAN_DOMAIN
             return
