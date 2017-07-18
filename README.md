@@ -18,7 +18,7 @@ $ cd ~
 $ git clone https://github.com/lukas2511/dehydrated
 $ cd dehydrated
 $ mkdir hooks
-$ git clone https://github.com/lenoxys/dns-01-fortiadc hooks/dns-01-fortiadc
+$ git clone https://github.com/SE-France/dns-01-fortiadc hooks/dns-01-fortiadc
 ```
 
 ## Configuration
