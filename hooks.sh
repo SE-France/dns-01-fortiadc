@@ -205,7 +205,7 @@ function add_cert() {
     DOMAIN=$(echo $DOMAIN | sed -e "s/\./-/g")
     DOMAIN=$(echo $DOMAIN | sed -e "s/_/-/g")
     
-    bash ./hooks/dns-01-fortiadc/expect.sh $DOMAIN $KEYFILE $CERTFILE $VDOM $FORTIADC $USERNAME $PASSWORD 
+    expect ./hooks/dns-01-fortiadc/expect.sh $DOMAIN $KEYFILE $CERTFILE $VDOM $FORTIADC $USERNAME $PASSWORD 
 
 }
 
