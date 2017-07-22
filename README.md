@@ -8,7 +8,7 @@ Tested on FortiADC® 5.8.0
 
 ```
 $ sudo apt-get update
-$ sudo apt-get -y openssl curl sed grep mktemp git jq
+$ sudo apt-get -y openssl curl sed grep mktemp git jq expect
 ```
 
 ## Installation

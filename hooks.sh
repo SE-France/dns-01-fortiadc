@@ -7,10 +7,10 @@
 TOKEN_LOCK_FILE="token.lock"
 
 CURL="/usr/bin/curl -s -f -m 5 -H 'Accept: application/json'"
-CURL_LOGIN="$CURL -c $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
-CURL_GET="$CURL -b $TOKEN_LOCK_FILE -k -X GET $FORTIADC/api"
-CURL_POST="$CURL -b $TOKEN_LOCK_FILE -k -X POST $FORTIADC/api"
-CURL_DELETE="$CURL -b $TOKEN_LOCK_FILE -k -X DELETE $FORTIADC/api"
+CURL_LOGIN="$CURL -c $TOKEN_LOCK_FILE -k -X POST https://$FORTIADC/api"
+CURL_GET="$CURL -b $TOKEN_LOCK_FILE -k -X GET https://$FORTIADC/api"
+CURL_POST="$CURL -b $TOKEN_LOCK_FILE -k -X POST https://$FORTIADC/api"
+CURL_DELETE="$CURL -b $TOKEN_LOCK_FILE -k -X DELETE https://$FORTIADC/api"
 
 IS_VDOM=0
 LOGGED=0
@@ -195,11 +195,23 @@ function verif_challenge_live() {
     done
 }
 
+function add_cert() {
+    local  DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" VDOM="${4}" 
+
+    echo '   + add certificate using expect script'
+    
+    test -z "${VDOM}" && VDOM=-1
+    
+    DOMAIN=$(echo $DOMAIN | sed -e "s/\./-/g")
+    DOMAIN=$(echo $DOMAIN | sed -e "s/_/-/g")
+    
+    ./hooks/dns-01-fortiadc/expect.sh $DOMAIN $KEYFILE $CERTFILE $VDOM $FORTIADC $USERNAME $PASSWORD 
+
+}
 
 function deploy_challenge() {
     local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
     
-    # This hook is called once for every domain that needs to be
     # validated, including any alternative names you may have listed.
     #
     # Parameters:
@@ -314,7 +326,13 @@ function deploy_cert() {
     
     echo ' + fortiadc hook executing: deploy_cert'
     
-    echo ' + nothing to do'
+    login
+    if [[ $LOGGED == 1 ]] ; then
+        get_vdom_list
+        add_cert $DOMAIN $KEYFILE $CERTFILE $IS_VDOM
+        logout
+    fi
+
 }
 
 function unchanged_cert() {
