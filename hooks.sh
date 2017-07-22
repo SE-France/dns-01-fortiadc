@@ -329,7 +329,7 @@ function deploy_cert() {
     login
     if [[ $LOGGED == 1 ]] ; then
         get_vdom_list
-        add_cert $DOMAIN $KEYFILE $CERTFILE $IS_VDOM
+        add_cert $TIMESTAMP'-'$DOMAIN $KEYFILE $CERTFILE $IS_VDOM
         logout
     fi
 
